@@ -3,169 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Product Catalog</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Catálogo Digital</title>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f9f9f9;
         }
-        .header {
-            text-align: center;
+        .catalog-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             padding: 20px;
-            background-color: #007BFF;
-            color: white;
-        }
-        .catalog {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 10px;
         }
         .product-card {
-            background: #fff;
+            width: 250px;
+            margin: 15px;
+            border: 1px solid #ddd;
             border-radius: 8px;
+            background-color: #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            text-align: center;
-            transition: transform 0.3s;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
         .product-card:hover {
-            transform: translateY(-5px);
+            transform: scale(1.05);
         }
         .product-card img {
             width: 100%;
-            height: 200px;
-            object-fit: cover;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
         }
-        .product-info {
+        .product-details {
             padding: 10px;
-        }
-        .product-info h3 {
-            margin: 10px 0 5px;
-            font-size: 18px;
-            color: #333;
-        }
-        .product-info p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #666;
-        }
-        .product-info .price {
-            font-size: 16px;
-            color: #007BFF;
-            font-weight: bold;
-        }
-        .product-info .buy-button {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 10px 15px;
-            background-color: #007BFF;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        .product-info .buy-button:hover {
-            background-color: #0056b3;
-        }
-        .filter-bar {
             text-align: center;
-            margin: 20px;
         }
-        .filter-bar select {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+        .product-details h4 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+        .product-details p {
+            margin: 0 0 10px;
+            color: #555;
+        }
+        #product-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        #modal-content img {
+            width: 100%;
+            border-radius: 8px;
+        }
+        #close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #fff;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Digital Product Catalog</h1>
-    </div>
+    <div id="catalog" class="catalog-container"></div>
 
-    <div class="filter-bar">
-        <label for="category-filter">Filter by Category:</label>
-        <select id="category-filter">
-            <option value="">All Categories</option>
-            <option value="Clothing">Clothing</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Footwear">Footwear</option>
-            <option value="Others">Others</option>
-        </select>
-    </div>
-
-    <div class="catalog" id="catalog">
-        <!-- Dynamic product cards will be injected here -->
+    <div id="product-modal">
+        <div id="modal-content">
+            <span id="close-modal">&times;</span>
+            <img id="modal-image" src="" alt="Product Image">
+            <h3 id="modal-title"></h3>
+            <p id="modal-description"></p>
+            <p><strong>Precio: </strong><span id="modal-price"></span></p>
+            <label for="sizes">Tallas: </label>
+            <select id="sizes"></select>
+            <button id="add-to-cart">Agregar al carrito</button>
+        </div>
     </div>
 
     <script>
-        // Example product data
-        const products = [
-            {
-                name: "Stylish Hat",
-                description: "A stylish hat for all occasions.",
-                price: 25,
-                category: "Accessories",
-                image: "https://via.placeholder.com/250"
-            },
-            {
-                name: "Elegant Shoes",
-                description: "Comfortable and elegant shoes for daily wear.",
-                price: 50,
-                category: "Footwear",
-                image: "https://via.placeholder.com/250"
-            },
-            {
-                name: "Casual T-Shirt",
-                description: "A casual t-shirt with a sleek design.",
-                price: 20,
-                category: "Clothing",
-                image: "https://via.placeholder.com/250"
-            }
-        ];
+        const sheetId = "1IBnLDsQQlRnSCiFBI6jOCtAiCRk_eudmg8JXSHl8DqY";
+        const apiKey = "d40fe9dafd3e544bb2c8c22c395397f06acef4b7";
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?key=${apiKey}`;
 
-        const catalog = document.getElementById('catalog');
-        const categoryFilter = document.getElementById('category-filter');
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const products = data.values.slice(1).map(row => ({
+                    image: row[0],
+                    name: row[1],
+                    description: row[2],
+                    price: row[3],
+                    sizes: row[4].split(",")
+                }));
 
-        // Function to render products
-        function renderProducts(filter = "") {
-            catalog.innerHTML = ""; // Clear existing content
+                renderCatalog(products);
+            });
 
-            const filteredProducts = filter
-                ? products.filter(product => product.category === filter)
-                : products;
-
-            filteredProducts.forEach(product => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-
+        function renderCatalog(products) {
+            const catalog = document.getElementById("catalog");
+            products.forEach(product => {
+                const card = document.createElement("div");
+                card.classList.add("product-card");
                 card.innerHTML = `
                     <img src="${product.image}" alt="${product.name}">
-                    <div class="product-info">
-                        <h3>${product.name}</h3>
+                    <div class="product-details">
+                        <h4>${product.name}</h4>
                         <p>${product.description}</p>
-                        <p class="price">$${product.price}</p>
-                        <a href="#" class="buy-button">Buy Now</a>
+                        <p><strong>${product.price}</strong></p>
                     </div>
                 `;
-
+                card.addEventListener("click", () => openModal(product));
                 catalog.appendChild(card);
             });
         }
 
-        // Initial render
-        renderProducts();
+        function openModal(product) {
+            document.getElementById("product-modal").style.display = "flex";
+            document.getElementById("modal-image").src = product.image;
+            document.getElementById("modal-title").textContent = product.name;
+            document.getElementById("modal-description").textContent = product.description;
+            document.getElementById("modal-price").textContent = product.price;
+            const sizeSelect = document.getElementById("sizes");
+            sizeSelect.innerHTML = "";
+            product.sizes.forEach(size => {
+                const option = document.createElement("option");
+                option.value = size;
+                option.textContent = size;
+                sizeSelect.appendChild(option);
+            });
+        }
 
-        // Add event listener for category filter
-        categoryFilter.addEventListener('change', (e) => {
-            renderProducts(e.target.value);
+        document.getElementById("close-modal").addEventListener("click", () => {
+            document.getElementById("product-modal").style.display = "none";
         });
     </script>
 </body>
